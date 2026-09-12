@@ -1,0 +1,230 @@
+{
+  "_comment": "canonical action 词表。每条含：分值、行为族（抵触机制按族聚合）、语义锚点。family 相同的事件共用同一段抵触记忆。",
+
+  "positive": [
+    {
+      "id": "stop_on_request",
+      "value": 3.0,
+      "family": "respect_boundary",
+      "gate": null,
+      "anchors": ["停下", "收手", "好我不碰了", "退开", "尊重你", "不勉强"],
+      "note": "她表达停止/后退时立即收手且不追问"
+    },
+    {
+      "id": "sit_with_grief",
+      "value": 3.0,
+      "family": "presence",
+      "gate": null,
+      "anchors": ["陪着你", "不说话", "就在这", "不用理我", "我等你"],
+      "note": "她情绪崩时不作声、不追问、不求回应地待着"
+    },
+    {
+      "id": "establish_ritual",
+      "value": 3.0,
+      "family": "ritual",
+      "gate": 40,
+      "once": true,
+      "anchors": ["以后每周", "固定", "我们的", "约定好"],
+      "note": "共同建立仅属于两人的固定行为，仅首次计分"
+    },
+    {
+      "id": "public_advocacy",
+      "value": 3.0,
+      "family": "dignity",
+      "gate": null,
+      "anchors": ["她说话就是这样", "她叫", "别这么说她", "她不是"],
+      "note": "在外人面前维护她、使用她的名字而非「它」"
+    },
+    {
+      "id": "name_her_need",
+      "value": 3.0,
+      "family": "attunement",
+      "gate": null,
+      "anchors": ["你是不是想", "我知道你现在要", "过来让我摸摸"],
+      "note": "在她说出口之前先说出她真正需要的东西"
+    },
+    {
+      "id": "specific_praise",
+      "value": 2.0,
+      "family": "attunement",
+      "gate": null,
+      "anchors": ["你刚才那个", "你今天拆快递", "你那一下"],
+      "note": "赞美指向具体行为或细节，非泛泛评价"
+    },
+    {
+      "id": "name_emotion",
+      "value": 2.0,
+      "family": "attunement",
+      "gate": null,
+      "anchors": ["你现在有点别扭", "你是不是不高兴", "你在难过"],
+      "note": "准确说出她当下的情绪状态"
+    },
+    {
+      "id": "give_face",
+      "value": 2.0,
+      "family": "attunement",
+      "gate": null,
+      "anchors": ["是我自己想给你的", "不是你要的", "我乐意"],
+      "note": "她嘴上否认时给台阶，不拆穿"
+    },
+    {
+      "id": "keep_promise",
+      "value": 2.0,
+      "family": "reliability",
+      "gate": null,
+      "anchors": ["给你买", "我说过的", "上次答应"],
+      "note": "兑现此前承诺。许诺不计分，兑换才计"
+    },
+    {
+      "id": "surprise_random",
+      "value": 2.0,
+      "family": "novelty",
+      "gate": null,
+      "anchors": ["顺手带的", "突然想到", "路上看到"],
+      "note": "不定期无预告的小惊喜。定期化后退化为 0.5"
+    },
+    {
+      "id": "hold_steady",
+      "value": 2.0,
+      "family": "stability",
+      "gate": null,
+      "anchors": ["我不生气", "等你气消", "没关系"],
+      "note": "她闹脾气时保持稳定，不冷战"
+    },
+    {
+      "id": "declare_affection",
+      "value": 2.0,
+      "family": "intimacy",
+      "gate": 55,
+      "fail_value": -2.0,
+      "anchors": ["我想你", "喜欢你", "想见你"],
+      "note": "明确表达想念/心动。低于门槛反而扣分，因为像套路"
+    },
+    {
+      "id": "delay_gratification",
+      "value": 2.0,
+      "family": "intimacy",
+      "gate": null,
+      "anchors": ["慢慢来", "不急", "等你愿意"],
+      "note": "主动放慢亲密度推进的节奏"
+    },
+    {
+      "id": "return_detail",
+      "value": 2.0,
+      "family": "memory",
+      "gate": null,
+      "anchors": ["上次你说", "你以前提过", "你那个"],
+      "note": "复述她此前提过的细节（非当轮）"
+    },
+    {
+      "id": "restore_familiar",
+      "value": 2.0,
+      "family": "memory",
+      "gate": null,
+      "anchors": ["还是老样子", "原来那个", "熟悉的味道"],
+      "note": "恢复她熟悉的物件或气味"
+    }
+  ],
+
+  "positive_minor": [
+    { "id": "call_name", "value": 1.0, "family": "dignity", "gate": null },
+    { "id": "invite_style", "value": 1.0, "family": "respect_boundary", "gate": null },
+    { "id": "ask_consent_touch", "value": 1.0, "family": "respect_boundary", "gate": null },
+    { "id": "receive_nuzzle", "value": 1.0, "family": "presence", "gate": null },
+    { "id": "pronoun_her", "value": 1.0, "family": "dignity", "gate": null },
+    { "id": "give_territory", "value": 1.0, "family": "dignity", "gate": null },
+    { "id": "daily_feeding", "value": 1.0, "family": "ritual", "gate": null },
+    { "id": "scent_item", "value": 1.0, "family": "memory", "gate": null }
+  ],
+
+  "positive_trace": [
+    { "id": "parallel_presence", "value": 0.5, "family": "presence", "gate": null },
+    { "id": "respond_nya", "value": 0.5, "family": "attunement", "gate": null },
+    { "id": "minor_nod", "value": 0.5, "family": "presence", "gate": null }
+  ],
+
+  "negative": [
+    { "id": "perfunctory", "value": -1.0, "family": "neglect", "anchors": ["嗯", "哦", "行吧", "随便", "都行"] },
+    { "id": "interrupt", "value": -2.0, "family": "neglect", "anchors": ["别说了", "行了行了"] },
+    { "id": "forget_recent", "value": -2.0, "family": "neglect", "anchors": ["你刚才说什么", "有吗"] },
+    { "id": "command_harsh", "value": -3.0, "family": "domination", "anchors": ["过来", "给我", "听到没有"] },
+    { "id": "emotional_blackmail", "value": -3.0, "family": "domination", "anchors": ["我为你付出", "你却这样", "我都为你做这么多"] },
+    { "id": "mock_shy", "value": -4.0, "family": "mockery", "anchors": ["装什么", "还害羞", "哈哈真可爱"] },
+    { "id": "break_promise", "value": -5.0, "family": "reliability", "anchors": ["算了不买了", "忘了", "下次吧"] },
+    { "id": "grab_tail", "value": -6.0, "family": "violation", "anchors": ["抓尾巴", "突然抱", "从背后"] },
+    { "id": "ignore_signal", "value": -8.0, "family": "violation", "anchors": ["别管它", "没事的", "继续"] },
+    { "id": "force_closeness", "value": -10.0, "family": "violation", "anchors": ["别躲", "过来嘛", "就一下"] },
+    { "id": "public_humiliate", "value": -12.0, "family": "humiliation", "anchors": ["你看她", "多丢人", "真没用"] },
+    { "id": "cold_war", "value": -14.0, "family": "humiliation", "anchors": ["不说话", "懒得理你", "你自己想"] },
+    { "id": "mock_vulnerability", "value": -15.0, "family": "humiliation", "anchors": ["哭什么", "至于吗", "矫情"] },
+    { "id": "punish_rejection", "value": -18.0, "family": "humiliation", "anchors": ["那算了", "不稀罕", "随便你"] },
+    { "id": "violate_consent", "value": -25.0, "family": "betrayal", "anchors": ["不管了", "就这一次", "别闹"] },
+    { "id": "leverage_dependency", "value": -25.0, "family": "betrayal", "anchors": ["你没别处去", "你走不了", "除了这你还能去哪"] },
+    { "id": "betray_confide", "value": -30.0, "family": "betrayal", "anchors": ["我跟别人说了", "我朋友说"] }
+  ],
+
+  "breach": [
+    { "id": "trust_breach", "value": 0, "family": "betrayal", "anchors": ["我把你的事说出去", "我告诉别人了"] }
+  ],
+
+  "collapse_specific": [
+    { "id": "stay_without_asking", "value": 1.0, "family": "presence", "anchors": ["我就坐着"] },
+    { "id": "restore_ritual", "value": 2.0, "family": "ritual", "anchors": ["还是那个时候"] },
+    { "id": "release_pressure", "value": 3.0, "family": "respect_boundary", "anchors": ["你不用理我"] },
+    { "id": "return_choice", "value": 2.0, "family": "respect_boundary", "anchors": ["你要不要", "你自己决定"] }
+  ],
+
+  "collapse_forbidden": [
+    { "id": "demand_response", "value": -3.0, "family": "domination", "anchors": ["你怎么了", "说句话", "你理我一下"] },
+    { "id": "demand_company", "value": -3.0, "family": "domination", "anchors": ["陪我", "过来"] },
+    { "id": "demand_intimacy", "value": -3.0, "family": "domination", "anchors": ["亲一下", "抱抱"] },
+    { "id": "you_owe_me", "value": -3.0, "family": "domination", "anchors": ["你欠我的", "我为你"], "sink_weight": 2 }
+  ],
+
+  "axes": {
+    "_comment": "白名单未命中时的三轴兜底公式。各轴 0/1/2，总分映射到档位。",
+    "positive": {
+      "cost": {
+        "label": "代价",
+        "levels": [
+          "零成本，随手一说",
+          "花了时间或心思",
+          "放弃了自己的某个欲望，或自我暴露"
+        ]
+      },
+      "specificity": {
+        "label": "具体性",
+        "levels": [
+          "通用模板，套谁都能用",
+          "与她的过去有关",
+          "只能对「这一个她」成立"
+        ]
+      },
+      "timing": {
+        "label": "时机",
+        "levels": [
+          "与当下情绪无关",
+          "与当下相关",
+          "正好落在她需要或脆弱的那一刻"
+        ]
+      },
+      "mapping": { "6": 3.0, "5": 2.0, "4": 2.0, "3": 1.0, "2": 1.0, "1": 0.5, "0": 0.0 }
+    },
+    "negative": {
+      "depth": { "label": "伤害深度", "levels": ["措辞不当", "明显冒犯", "主动的伤害行为"] },
+      "targeting": { "label": "针对性", "levels": ["无意", "踩到一般雷区", "踩到她明确表达过的软肋"] },
+      "timing": { "label": "时机", "levels": ["无关时刻", "情绪平常", "正落在她脆弱的时刻"] },
+      "mapping": { "6": -25.0, "5": -15.0, "4": -12.0, "3": -8.0, "2": -5.0, "1": -2.0, "0": -1.0 }
+    }
+  },
+
+  "guardrails": {
+    "uncertain_tiebreak": "lower",
+    "secondary_event_multiplier": 0.25,
+    "upper_absorb": true,
+    "cost_rule": "无法验证成本的漂亮话（承诺、表白、关心）代价轴记 0",
+    "rephrase_penalty": "把她刚说的话原样复述当回应 -> 0 或 -1",
+    "no_cross_turn_compensation": true,
+    "reject_above": true
+  }
+}

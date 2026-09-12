@@ -1,0 +1,49 @@
+{
+  "_comment": "LLM 传输层配置。改这里不需要动代码。每类调用有独立的采样参数——演出要高温，判分要低温。",
+
+  "base_url": "https://api.deepseek.com",
+  "model": "deepseek-flash",
+  "_model_note": "这个 key 可用的模型只有 deepseek-flash / deepseek-v4-pro（见 /models）。带 [1m] 后缀的写法只在 Anthropic 兼容端点上有效，在这个 OpenAI 兼容端点上会 400。",
+
+  "proxy": null,
+  "_proxy_note": "null = 直连，并显式覆盖系统里的 http(s)_proxy。DeepSeek 是国内服务，而那台机器上的 127.0.0.1:7897 是给 GitHub 翻墙用的，套到 api.deepseek.com 上会被代理间歇性掐断 TLS（实测 6 次挂 2 次，报 SSLEOFError）。确实需要走代理就填 \"http://127.0.0.1:7897\"。",
+
+  "timeout": [10, 120],
+  "_timeout_note": "（连接超时, 读取超时）秒。",
+
+  "retries": 3,
+  "retry_backoff": 1.0,
+  "_retry_note": "只在还没吐出任何文字时才重连——已经打印一半再重连会把正文重复输出。HTTP 4xx/5xx 是确定性的（比如模型名写错），不重试。",
+
+  "tail_keep": 24,
+  "_tail_keep_note": "流式打印时扣住的尾部字符数，防止隐藏标记在刷屏前闪出来。",
+
+  "speak": {
+    "_comment": "演出。要的是表现力。temperature 1.3 是 DeepSeek 对角色扮演/创意写作的建议值。",
+    "temperature": 1.3,
+    "top_p": 0.95,
+    "max_tokens": 800,
+    "reasoning_effort": "low"
+  },
+
+  "judge": {
+    "_comment": "判分。要的是确定性，不是创造力。实测 reasoning_effort=none 比 low 快一倍多（0.7s vs 1.6s）。",
+    "temperature": 0.0,
+    "max_tokens": 200,
+    "reasoning_effort": "none"
+  },
+
+  "summarize": {
+    "_comment": "记忆压缩。同样是确定性任务。",
+    "temperature": 0.0,
+    "max_tokens": 800,
+    "reasoning_effort": "none"
+  },
+
+  "crisis": {
+    "_comment": "危机分支。比演出低——这一刻要的是稳，不是发挥。",
+    "temperature": 0.5,
+    "max_tokens": 300,
+    "reasoning_effort": "none"
+  }
+}

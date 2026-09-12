@@ -1,0 +1,18 @@
+[project]
+name = "neko-chat-agent"
+version = "1.0.0"
+description = "猫娘对话 Agent —— 撑得住 200+ 回合、数值不被玩坏的恋爱养成系统"
+requires-python = ">=3.10"
+
+# 只有在线模式需要 requests。离线模式（全部测试 + StubBackend）是零依赖的，
+# 所以 src/deepseek.py 里用的是惰性导入 —— 别改成模块级 import，
+# 那会让 138 项离线测试在裸 Python 下跑不起来。
+dependencies = [
+    "requests>=2.31",
+]
+
+# 没有 [project.scripts]：这是个脚本工程不是可安装包，入口就是 `python main.py`。
+# 定义入口点但不打包会让 uv 每次都警告，徒增噪音。
+
+[tool.uv]
+package = false

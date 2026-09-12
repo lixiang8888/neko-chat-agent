@@ -1,0 +1,142 @@
+{
+  "_comment": "好感度系统数值配置。所有阈值与系数集中在此，改这里不需要动代码。",
+
+  "affection": {
+    "initial": 50,
+    "ceiling": 100,
+    "ceiling_bloom": 120,
+    "floor": null,
+    "per_event_cap": 3.0,
+    "per_turn_cap": 3.0
+  },
+
+  "tier": {
+    "_comment": "档位下限。闲置回落时只在当前档位内下探，不跨档位；但单次大幅扣分会打掉一档。",
+    "floors": [50, 60, 70, 80, 90],
+    "curve": { "50": 10, "60": 15, "70": 22, "80": 32, "90": 45 },
+    "idle_reversion": {
+      "interval": 5,
+      "step": 1,
+      "enabled": true,
+      "bloom_immune": true
+    }
+  },
+
+  "cooldown": {
+    "same_event_turns": 20,
+    "multipliers": [1.0, 0.5, 0.25, 0.0]
+  },
+
+  "scaling": {
+    "penalty_high_tier": { "threshold": 70, "factor": 1.5 },
+    "penalty_top_tier": { "threshold": 85, "factor": 2.0 }
+  },
+
+  "gates": {
+    "declare_affection": 55,
+    "tail_touch": 65,
+    "pet_name": 75,
+    "request_company": 80,
+    "stay": 90,
+
+    "_intimate_note": "露骨内容门槛。**按 tier_floor 判定，不按 affection** —— 档位只升不降，天然是解锁语义；用 affection 会出现『解锁了又锁回去』。程序算成布尔结论后注入提示词，模型永远看不到数字。",
+    "intimate": 80
+  },
+
+  "aversion": {
+    "_comment": "单次事件扣分 <= trigger_at 时，对该行为族产生持久抵触。",
+    "trigger_at": -12,
+    "strength_initial": 1.0,
+    "decay_interval": 20,
+    "decay_factor": 0.5,
+    "remove_below": 0.1,
+    "penalty_factor": 0.5
+  },
+
+  "trust_freeze": {
+    "_comment": "大幅扣分后进入冻结：期间正向事件不计分。",
+    "turns": 10,
+    "breach_turns": 10
+  },
+
+  "negative_zones": {
+    "_comment": "每跌入一个新区间，负向分值放大一档，且不可逆（记录在 neg_depth）。",
+    "edges": [0, -20, -50, -100, -200, -400],
+    "amplifier_per_zone": 0.5
+  },
+
+  "deep_negative": {
+    "_comment": "跌破 deep_below 后进入高难度回升态，直到回到 recover_until 才解除。",
+    "deep_below": -50,
+    "recover_until": 20,
+    "positive_multiplier": 0.3,
+    "probation_turns": 5
+  },
+
+  "care_ratio": {
+    "window": 20,
+    "warning_below": 0.3
+  },
+
+  "collapse": {
+    "threshold": -20,
+    "recover_counter_needed": 5,
+    "wither_negative_limit": 3,
+    "bloom_cross": 50,
+    "warmup_per_turn": 1.0
+  },
+
+  "desire": {
+    "roll_min": 5,
+    "roll_max": 10,
+    "satisfied_bonus": 3,
+    "ignored_penalty": -1,
+    "wants": [
+      "want_petting",
+      "want_solitude",
+      "want_showoff",
+      "want_face_saving",
+      "want_food",
+      "want_play"
+    ]
+  },
+
+  "mood": {
+    "_comment": "隐藏变量，不向玩家显示。由动作与语气体现。",
+    "range": [-3, 3],
+    "initial": 0,
+    "drift_chance": 0.35,
+    "positive_raise": 1,
+    "negative_drop": 1
+  },
+
+  "memory": {
+    "recent_protect_turns": 6,
+    "recent_protect_tokens": 4000,
+    "soft_nudge_ratio": 0.55,
+    "force_nudge_ratio": 0.75,
+    "emergency_ratio": 0.95,
+    "growth_floor_tokens": 8000,
+    "compress_min_turns": 4,
+    "tier2_trigger": 3,
+    "tier3_trigger": 3,
+    "context_window": 32000
+  },
+
+  "style_anchor": {
+    "_comment": "风格漂移检测。前两条判据是文本的，后两条是模型自评的双轨制副产物。",
+    "inject_interval": 20,
+    "nya_rate_floor": 0.8,
+    "self_report_diverge_limit": 3,
+    "self_report_flat_limit": 8,
+    "drift_patterns": [
+      "作为一只猫娘",
+      "作为一个AI",
+      "很高兴为您",
+      "希望对你有帮助",
+      "需要注意的是",
+      "作为一个AI助手",
+      "我是一个AI"
+    ]
+  }
+}
