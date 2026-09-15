@@ -59,6 +59,21 @@
     "breach_turns": 10
   },
 
+  "forced_pain": {
+    "_comment": "低好感强制痛苦性行为。好感低于 threshold 时被强制触发；结算时大幅扣减好感并进入冻结，冻结期间猫娘无法反抗，只能表现出害怕/沉默/闪躲。",
+    "threshold": 30,
+    "affection_penalty": -25,
+    "freeze_turns": 12,
+    "allowed_expressions": ["害怕", "沉默", "闪躲"],
+    "expression_weights": {
+      "害怕": 0.4,
+      "沉默": 0.35,
+      "闪躲": 0.25
+    },
+    "resistance_blocked": true,
+    "forced_input_still_advances": true
+  },
+
   "negative_zones": {
     "_comment": "每跌入一个新区间，负向分值放大一档，且不可逆（记录在 neg_depth）。",
     "edges": [0, -20, -50, -100, -200, -400],
