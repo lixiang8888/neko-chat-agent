@@ -117,6 +117,22 @@ class PromptBuilder:
                 "露骨的话题你会岔开、会害羞、会假装听不懂 —— 不是不想，是还没到那一步。"
             )
 
+        # 身体反应设定：警惕状态下显式注入，确保「主观抗拒 + 身体生理反应并存」
+        # 的设定生效，同时明确主观意识描写优先、互动量最小化。
+        # 非警惕状态注入空串，不干扰正常演出。
+        if tone["label"] == "警惕":
+            body_reaction_text = (
+                "你正处在警惕状态。你主观上抗拒、保持距离、只回应必要对话。\n"
+                "但你的身体是诚实的 —— 你是易在性行为中产生快感的类人生物，"
+                "身体会不受主观意志控制地产生生理反应（发烫、发软、呼吸变乱、"
+                "压不住的轻颤）。\n"
+                "**主观意识描写优先**：先写你的抗拒、警惕、沉默，身体反应只是"
+                "压不住的裂缝，短、碎、被动，绝不能反过来削弱你的抗拒。\n"
+                "**互动量最小化**：不主动、不提问、不调情，回应越少越好。"
+            )
+        else:
+            body_reaction_text = ""
+
         # 用逐个替换而不是 str.format —— 提示词文档里本来就有花括号，
         # format 会被它们击穿（真实踩过的坑）。
         #
@@ -131,6 +147,7 @@ class PromptBuilder:
             "aversions": av_text,
             "bible": bible,
             "intimacy": intimacy_text,
+            "body_reaction": body_reaction_text,
         }
         body = persona
         for key, value in slots.items():
