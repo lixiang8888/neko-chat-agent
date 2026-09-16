@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""猫娘 Agent 的网页版入口。一键启动。
+"""猫娘聊天 的网页版入口。一键启动。
 
     python3 start_web.py                 # 自动读密钥，起在线模式，开浏览器
     python3 start_web.py --offline       # 强制离线（纯规则，不花钱）
@@ -39,7 +39,7 @@ if str(ROOT) not in sys.path:
 
 BANNER = """
 ╭──────────────────────────────────────────────╮
-│            猫 娘  ·  灯 下                   │
+│            猫 娘 聊 天                       │
 ╰──────────────────────────────────────────────╯
 """
 
@@ -181,7 +181,7 @@ def open_browser(url: str) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="猫娘 Agent · 网页版")
+    parser = argparse.ArgumentParser(description="猫娘聊天 · 网页版")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--host", default="127.0.0.1",
                         help="想在同局域网的手机上开就填 0.0.0.0")

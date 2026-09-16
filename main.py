@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""猫娘对话 Agent 的命令行入口。
+"""猫娘聊天 的命令行入口。
 
 用法
 ----
@@ -170,7 +170,7 @@ def _fresh_session(args, backend, *, new: bool, her_name: str = "猫娘") -> Ses
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="猫娘对话 Agent")
+    parser = argparse.ArgumentParser(description="猫娘聊天")
     parser.add_argument("--save", default="default", help="存档名")
     parser.add_argument("--new", action="store_true", help="开新周目")
     parser.add_argument("--name", help="她的名字（默认开新周目时询问，回车 = 猫娘）")

@@ -420,7 +420,7 @@ wheels = [
 ]
 
 [[package]]
-name = "neko-chat-agent"
+name = "neko-chat"
 version = "1.0.0"
 source = { virtual = "." }
 dependencies = [

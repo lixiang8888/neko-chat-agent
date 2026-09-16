@@ -1,4 +1,4 @@
-"""猫娘对话 Agent。"""
+"""猫娘聊天。"""
 
 from .state import GameState, SaveStore, estimate_tokens, tone_profile
 from .scoring import Proposal, Rules, ScoreResult, load_rules, resolve

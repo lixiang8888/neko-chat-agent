@@ -201,7 +201,7 @@ SESSIONS = Sessions(ROOT)
 _TASKS: set[asyncio.Task] = set()
 
 
-app = FastAPI(title="猫娘agent 桥接层", docs_url=None, redoc_url=None)
+app = FastAPI(title="猫娘聊天 桥接层", docs_url=None, redoc_url=None)
 
 
 # --------------------------------------------------------------------------

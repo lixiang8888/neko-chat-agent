@@ -44,7 +44,7 @@ SUITES = [
 
 def main() -> int:
     print("=" * 52)
-    print("  猫娘 Agent · 离线测试全集")
+    print("  猫娘聊天 · 离线测试全集")
     print("=" * 52)
 
     codes = []
