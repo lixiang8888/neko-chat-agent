@@ -19,7 +19,12 @@
 prompts/  人格、评分 rubric、记忆策略、危机处置（提示词层）
 config/   数值配置、行为词表、LLM 参数（改这里不用动代码）
 src/      传输层、状态机、评分引擎、记忆层、存档（程序层）
+server/   桥接层：把 Session 包成 HTTP / SSE（不含任何游戏逻辑）
+web/      浏览器里的演出层：index.html / style.css / app.js
 tests/    407 项离线测试（不需要 API Key，也不需要装 requests）
+
+main.py       终端入口
+start_web.py  网页入口（一键启动）
 ```
 
 `src/` 各模块职责（对应源文件）：
@@ -88,6 +93,109 @@ python3 tests/run_all.py
 
 **407 项，11 个套件，全部离线。** 不需要 API Key，不需要装 `requests`，
 不联网 —— 数值逻辑必须能在没有模型的情况下完整验证。
+
+---
+
+## Web 前端（在浏览器里跑）
+
+终端循环之外，同一个 `Session` 也可以在浏览器里跑成 GalGame 演出页。
+**状态与判定仍然全部在 Python 侧** —— 网页不是「另一个客户端」，是 `Session` 的一层皮肤。
+
+```bash
+python3 start_web.py
+```
+
+就这一条。它会自己装 Web 依赖、自己读密钥、起好服务、把浏览器打开。
+
+```
+╭──────────────────────────────────────────────╮
+│            猫 娘  ·  灯 下                   │
+╰──────────────────────────────────────────────╯
+
+  模式：在线    model=deepseek-flash    思考=low
+  地址：http://127.0.0.1:8000
+  存档：8 个（.../saves）
+```
+
+| 想要 | 命令 |
+|---|---|
+| 默认：读密钥、在线、开浏览器 | `python3 start_web.py` |
+| 不接模型，先看看界面 | `python3 start_web.py --offline` |
+| 换端口 | `python3 start_web.py --port 8080` |
+| 想在同局域网的手机上开 | `python3 start_web.py --host 0.0.0.0` |
+| 别自动开浏览器 | `python3 start_web.py --no-open` |
+
+密钥来源和 `main.py` 完全一致：`DEEPSEEK_API_KEY` 环境变量优先，其次同目录
+`keys.py`（已 gitignore）。**找不到密钥会直接报错退出**，不会偷偷退回离线 ——
+后端没接上时她是照模板复读的，那种「怎么老说同一句」最难查。
+
+⚠️ **单 worker。** 桥接层把 `Session` 按 `save_id` 缓存在进程内存里，
+多 worker 会让同一个存档出现两份活状态，各自写盘互相覆盖。
+所以没有 `--workers` 这个选项，也别自己加 `-w`。
+
+走 `uvicorn` 手动起也行（`uv run uvicorn server.app:app --port 8000`），
+那就得自己记得先 `uv sync --extra web`。
+
+> `--extra web` 是刻意的：Web 框架**不能**进 `dependencies`。
+> 那个文件里有一条硬约束 —— 离线模式（全部测试 + `StubBackend`）必须能在裸 Python 下跑，
+> `requests` 用的也是惰性导入。所以 `src/` 下任何文件都不 import FastAPI，
+> 桥接层是独立的 `server/`。
+
+### 桥接层只做三件事
+
+| 端点 | 作用 |
+|---|---|
+| `POST /api/turn` `POST /api/opening` | 把 `Session.say` / `Session.opening` 桥成 SSE |
+| `GET /api/status` | `Session.status(verbose=False)` —— **只有定性结论，没有数字** |
+| `GET /api/saves` `POST /api/saves/new` | 存档列表与开新周目 |
+
+外加两个只读投影：`GET /api/history`（刷新页面回放对话）、`DELETE /api/saves/{id}`。
+
+三条必须守住的不变量，都有测试盯着：
+
+1. **扣尾在服务端做。** 模型每回合末尾会吐 `<<好感度:N>>`，而 SSE 没有「撤回已发送文本」
+   这种事件 —— 裸 delta 推给浏览器，它就会明晃晃地闪在玩家眼前。
+   `server/app.py` 的 `TailBuffer` 复刻了 `src/display.py` 的 `StreamPrinter`，
+   剥标记用的是 `src.context` 那一份 regex。
+2. **`reasoning` delta 默认丢弃。** 等价于终端的 `--show-thinking` 关闭。
+3. **前端不复制任何逻辑。** 它把服务端给的 `tone` 直接贴到 `data-tone` 上，
+   由 CSS 决定「警惕」和「认定」分别是什么气氛。没有映射表、没有阈值、没有数字。
+
+### 演出：她的状态是氛围
+
+`web/style.css` 里没有立绘素材，**她是用 CSS 拼出来再重度模糊的一团光**。
+`data-tone` 驱动灯的颜色、光晕的范围、呼吸的快慢：
+
+```
+敌意 → 警惕 → 天生好感 → 依赖 → 独属 → 认定 → 绽放
+崩坏（灯开始闪）   沉沦（灯灭）
+```
+
+危机回合（`special == "crisis"`）单独处理：灯冷下来、动效停掉、她的话旁边多一道冷线。
+**不弹窗、不报警、不写「检测到关键词」** —— 那会把它变成一次系统事件，
+而它应该只是一次她安静下来的对话。
+
+截图在 [`docs/shots/`](docs/shots/)：四个 tone 档位、扉、危机回合、终幕、窄屏。
+
+### 跑前端测试
+
+```bash
+# 1. 流卫生：隐藏标记和思考过程都不许进 SSE
+uv run python tests/web/test_stream_hygiene.py
+
+# 2. P4：Playwright 驱动浏览器（需要 uv run playwright install chromium）
+python ~/.claude/skills/webapp-testing/scripts/with_server.py \
+  --server "uv run python tests/web/run_marker_server.py 8000" --port 8000 \
+  -- python tests/web/test_galgame.py
+```
+
+第 2 条用的是 `run_marker_server.py` 而不是普通服务器：`StubBackend` 一个字都不会吐
+`<<好感度:N>>`，拿它验证「标记不上屏」等于什么都没验证。那个假后端既吐标记
+（还故意把标记切在分片中间），也在分片之间停顿 —— 「流是真的」这一条才有东西可测。
+
+> **WSL 上 chromium 起不来**（报 `libnss3.so => not found`，而装它要 root）：
+> 用 `bash tests/web/with_browser.sh <命令>` 包一层。它用 `apt-get download` 把
+> 那几个 `.deb` 解到 `~/.local/lib/`，靠 `LD_LIBRARY_PATH` 生效，不动系统。
 
 ---
 

@@ -11,8 +11,21 @@ dependencies = [
     "requests>=2.31",
 ]
 
+[project.optional-dependencies]
+web = [
+    "fastapi>=0.141.1",
+    "sse-starlette>=3.4.11",
+    "uvicorn[standard]>=0.53.0",
+]
+
 # 没有 [project.scripts]：这是个脚本工程不是可安装包，入口就是 `python main.py`。
 # 定义入口点但不打包会让 uv 每次都警告，徒增噪音。
 
 [tool.uv]
 package = false
+
+[dependency-groups]
+dev = [
+    "playwright>=1.63.0",
+    "pytest>=9.1.1",
+]

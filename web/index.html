@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>灯下</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ─────────────────────────  扉：存档  ───────────────────────── -->
+  <section id="screen-title" class="screen screen--title">
+    <div class="room" aria-hidden="true">
+      <div class="her her--dormant">
+        <span class="her__aura"></span>
+        <span class="her__body"></span>
+        <span class="her__head"></span>
+        <span class="her__ear her__ear--l"></span>
+        <span class="her__ear her__ear--r"></span>
+      </div>
+    </div>
+
+    <div class="title">
+      <h1 class="wordmark">灯下</h1>
+      <p class="wordmark__sub">屋子里只有一盏灯，和她。</p>
+
+      <div id="save-list" class="saves" aria-label="存档"></div>
+
+      <form id="new-game" class="newgame" autocomplete="off">
+        <p class="newgame__label">开新的一周目</p>
+        <div class="newgame__row">
+          <label class="sr-only" for="her-name">她的名字</label>
+          <input id="her-name" class="newgame__input" type="text" maxlength="12"
+                 placeholder="她叫什么" spellcheck="false">
+          <button class="newgame__go" type="submit">开始</button>
+        </div>
+        <p class="newgame__hint">留空的话，她就叫「猫娘」。</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────  舞台  ───────────────────────── -->
+  <section id="screen-stage" class="screen screen--stage stage" data-tone="天生好感" hidden>
+    <div class="room" aria-hidden="true">
+      <div class="her">
+        <span class="her__aura"></span>
+        <span class="her__body"></span>
+        <span class="her__head"></span>
+        <span class="her__ear her__ear--l"></span>
+        <span class="her__ear her__ear--r"></span>
+      </div>
+    </div>
+
+    <header class="bar">
+      <h2 class="bar__title">灯下</h2>
+      <p class="bar__her"><span id="bar-name">猫娘</span></p>
+      <button id="btn-door" class="bar__door" type="button">合上门</button>
+    </header>
+
+    <div class="plate">
+      <div id="log" class="log" role="log" aria-live="polite" aria-label="对话"></div>
+      <div id="notes" class="notes" aria-live="polite"></div>
+    </div>
+
+    <form id="say-form" class="say" autocomplete="off">
+      <label class="sr-only" for="say-input">对她说</label>
+      <span class="say__caret" aria-hidden="true">›</span>
+      <input id="say-input" class="say__input" type="text" spellcheck="false"
+             placeholder="说点什么…" disabled>
+      <button class="say__go" type="submit" aria-label="说出口">说</button>
+    </form>
+  </section>
+
+</div>
+
+<div id="veil" class="veil" hidden>
+  <div class="veil__box">
+    <p id="veil-text" class="veil__text"></p>
+    <button id="veil-ok" class="veil__ok" type="button">知道了</button>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
