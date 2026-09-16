@@ -123,6 +123,12 @@ class Engine:
         # --- 崩坏分支判定 ---
         branch_change = self._evaluate_branches(result, events)
 
+        # --- 强制痛苦性行为：触发与递进 ---
+        self._advance_forced_pain(result, player_text, events)
+
+        # --- 内射类事件：加深一档 + 计数 + 扣分 + 冻结 ---
+        self._handle_creampie(player_text, events)
+
         # --- 空闲回落与档位维护 ---
         self._tick_idle(events)
 
@@ -364,6 +370,142 @@ class Engine:
             return "recovering"
 
         return None
+
+    # ------------------------------------------------------------------
+    # 强制痛苦性行为（forced_pain）的递进等级
+    # ------------------------------------------------------------------
+
+    # resistance_blocked=True 时，这些「求饶类」正向行为不推进恢复连击 ——
+    # 玩家不能靠一句「停手」直接退出该状态，得靠别的方式把好感挣回来。
+    _RESIST_FAMILIES = frozenset({"respect_boundary", "reliability"})
+
+    def _forced_pain_expression_for(self, level: int, player_text: str) -> str:
+        """本档表情：玩家显式点名的白名单表情优先，否则用档位默认值。"""
+        cfg = self.cfg["forced_pain"]
+        allowed = list(cfg.get("allowed_expressions") or [])
+        # 玩家输入显式给出的、allowed_expressions 白名单内的表情优先。
+        for exp in allowed:
+            if exp and exp in (player_text or ""):
+                return exp
+        return (cfg.get("expression_by_level") or {}).get(f"L{level}") or (
+            allowed[0] if allowed else ""
+        )
+
+    def _advance_forced_pain(
+        self, result: ScoreResult, player_text: str, events: list[str]
+    ) -> None:
+        """强制痛苦性行为的递进等级状态机。
+
+        - 触发：好感低于 ``threshold``（30），且本回合命中 ``trigger_families``
+          （betrayal / violation）中某一族、单次分值 ≤ ``trigger_threshold``（-8）。
+        - 推进：进入后每回合 ``forced_pain_turns += 1``；每满
+          ``level_escalate_turns``（3）回合 ``forced_pain_level`` 加深一档，
+          封顶 ``max_level``（5）。表情按 ``expression_by_level`` 填默认值。
+        - 恢复：``forced_pain_recovery_streak`` 连续 ``recover_streak_needed``（5）
+          个正向回合后 → ``forced_pain_active=False``，并把 level / turns / streak
+          全部归零。
+
+        两个语义开关：
+        - ``resistance_blocked=True``：``respect_boundary`` / ``reliability``
+          族的正向回合**不计**入恢复连击。
+        - ``forced_input_still_advances=False``：中性/无动作回合**不**推进回合计数。
+        """
+        cfg = self.cfg["forced_pain"]
+        state = self.state
+
+        # --- 未激活：判定是否进入该状态 ---
+        if not state.forced_pain_active:
+            if (
+                state.affection < cfg["threshold"]
+                and result.family in cfg["trigger_families"]
+                and result.final_value <= cfg["trigger_threshold"]
+            ):
+                state.forced_pain_active = True
+                state.forced_pain_level = 1
+                state.forced_pain_turns = 1
+                state.forced_pain_recovery_streak = 0
+                state.forced_pain_expression = self._forced_pain_expression_for(
+                    1, player_text
+                )
+                events.append(f"强制痛苦 L1（{state.forced_pain_expression}）")
+            return
+
+        # --- 已激活：先判定本回合是否是「被动回合」---
+        passive = result.action_id is None and result.final_value == 0
+        if passive and not cfg.get("forced_input_still_advances", True):
+            return
+
+        # 恢复连击：正向回合 +1，否则清零。resistance_blocked 时求饶类不计。
+        positive = result.final_value > 0
+        if positive and cfg.get("resistance_blocked") and result.family in self._RESIST_FAMILIES:
+            positive = False
+
+        # --- 回合推进 ---
+        state.forced_pain_turns += 1
+        escalate = max(1, int(cfg["level_escalate_turns"]))
+        if (
+            state.forced_pain_turns % escalate == 0
+            and state.forced_pain_level < cfg["max_level"]
+        ):
+            state.forced_pain_level += 1
+            events.append(f"强制痛苦加深至 L{state.forced_pain_level}")
+
+        # --- 表情按当前档位刷新（玩家点名优先）---
+        state.forced_pain_expression = self._forced_pain_expression_for(
+            state.forced_pain_level, player_text
+        )
+
+        if positive:
+            state.forced_pain_recovery_streak += 1
+            if state.forced_pain_recovery_streak >= cfg["recover_streak_needed"]:
+                state.forced_pain_active = False
+                state.forced_pain_level = 0
+                state.forced_pain_turns = 0
+                state.forced_pain_recovery_streak = 0
+                state.forced_pain_expression = ""
+                events.append("强制痛苦解除")
+        else:
+            state.forced_pain_recovery_streak = 0
+
+    # ------------------------------------------------------------------
+    # 内射类事件（creampie）
+    # ------------------------------------------------------------------
+
+    def _handle_creampie(self, player_text: str, events: list[str]) -> None:
+        """命中「内射 / 射进去 / 中出」类触发词时的结算。
+
+        - ``forced_pain_level`` 加深一档（数值 +1，封顶 ``max_level`` L5）
+        - ``forced_pain_creampie_count += 1``
+        - 按 ``creampie_penalty``（-10）扣好感
+        - 按 ``creampie_freeze_turns``（12）进入冻结；与既有 ``trust_freeze_until``
+          **取两者更长的那个**，不覆盖更长的既有冻结。
+        """
+        from .scoring import detect_creampie
+
+        if not detect_creampie(player_text, self.rules):
+            return
+
+        cfg = self.cfg["forced_pain"]
+        state = self.state
+
+        if state.forced_pain_active and state.forced_pain_level < cfg["max_level"]:
+            state.forced_pain_level += 1
+            state.forced_pain_expression = self._forced_pain_expression_for(
+                state.forced_pain_level, player_text
+            )
+            events.append(f"内射加深至 L{state.forced_pain_level}")
+
+        state.forced_pain_creampie_count += 1
+        events.append(f"内射计数 {state.forced_pain_creampie_count}")
+
+        # 扣好感（负值全价，不受档位下限保护）
+        state.affection = round(state.affection + cfg["creampie_penalty"], 3)
+        events.append(f"内射扣分 {cfg['creampie_penalty']:+.1f}")
+
+        # 冻结：与既有 trust_freeze 取更长者
+        freeze = cfg["creampie_freeze_turns"]
+        state.trust_freeze_until = max(state.trust_freeze_until, state.turn + freeze)
+        events.append(f"内射冻结 {freeze} 回合")
 
     # ------------------------------------------------------------------
     # 空闲回落（用户第 1 点修复）

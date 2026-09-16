@@ -199,6 +199,17 @@ class GameState:
     self_report_streak: int = 0   # 连续「方向背离」回合数
     self_report_flat: int = 0     # 连续「自评纹丝不动」回合数（抓锚定）
 
+    # --- 强制痛苦性行为（forced_pain）递进等级 ---
+    # 0 = 未触发；1~5 对应 prompts/persona.md 里的 L1 哀求 → L2 放弃思考
+    # → L3 哭泣痛苦回应 → L4 身体失控放荡呻吟 → L5 绝望呆滞/本能反应。
+    # 内射 / 射进去 / 中出 类触发词会让 level 立刻 +1（数值加深一档，上限 L5）。
+    forced_pain_active: bool = False
+    forced_pain_level: int = 0
+    forced_pain_expression: str = ""      # 害怕 / 闪躲 / 沉默
+    forced_pain_turns: int = 0            # 已持续回合数（用于按轮次推进）
+    forced_pain_creampie_count: int = 0   # 内射类触发累计次数
+    forced_pain_recovery_streak: int = 0  # 连续正向回合数（用于退出）
+
     # --- 交互统计 ---
     cooldowns: dict[str, list[int]] = field(default_factory=dict)
     used_once: list[str] = field(default_factory=list)

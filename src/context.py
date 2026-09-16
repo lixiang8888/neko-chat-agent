@@ -133,6 +133,20 @@ class PromptBuilder:
         else:
             body_reaction_text = ""
 
+        # 强制痛苦性行为：把「结论」注入（等级 + 表情质感），不注入好感数字。
+        if state.forced_pain_active:
+            level = state.forced_pain_level
+            expr = state.forced_pain_expression or "（未指定）"
+            forced_pain_text = (
+                f"⚠️ 状态：强制痛苦性行为（强制痛苦标记已激活）\n"
+                f"- 当前等级：L{level}\n"
+                f"- 当前表情质感：{expr}\n"
+                f"- 提醒：内射类事件会把等级再加深一档（L5 封顶）。\n"
+                f"按上面「强制痛苦行为」段的 L{level} 与「{expr}」质感演出。"
+            )
+        else:
+            forced_pain_text = ""
+
         # 用逐个替换而不是 str.format —— 提示词文档里本来就有花括号，
         # format 会被它们击穿（真实踩过的坑）。
         #
@@ -148,6 +162,7 @@ class PromptBuilder:
             "bible": bible,
             "intimacy": intimacy_text,
             "body_reaction": body_reaction_text,
+            "forced_pain": forced_pain_text,
         }
         body = persona
         for key, value in slots.items():

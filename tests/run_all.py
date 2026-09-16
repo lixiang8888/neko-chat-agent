@@ -20,6 +20,7 @@ import test_crisis  # noqa: E402
 import test_engine  # noqa: E402
 import test_intimacy  # noqa: E402
 import test_memory  # noqa: E402
+import test_persona_forced  # noqa: E402
 import test_regressions  # noqa: E402
 import test_scoring  # noqa: E402
 import test_secrets  # noqa: E402
@@ -36,6 +37,7 @@ SUITES = [
     ("露骨档位门", test_intimacy.run),
     ("危机分支", test_crisis.run),
     ("密钥防线", test_secrets.run),
+    ("人格设定·强制场景", test_persona_forced.run),
     ("回归防线", test_regressions.run),
 ]
 

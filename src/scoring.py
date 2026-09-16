@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -71,6 +72,7 @@ class Rules:
     axes: dict[str, Any]
     guardrails: dict[str, Any]
     config: dict[str, Any]
+    creampie_patterns: list[Any] = field(default_factory=list)
 
     @property
     def all_actions(self) -> list[ActionSpec]:
@@ -128,7 +130,36 @@ def load_rules(config_dir: str | Path) -> Rules:
         axes=raw["axes"],
         guardrails=raw["guardrails"],
         config=affection,
+        creampie_patterns=_load_creampie_patterns(config_dir),
     )
+
+
+def _load_creampie_patterns(config_dir: str | Path) -> list[re.Pattern[str]]:
+    """从 config/creampie_patterns.json 载入内射类触发词正则表。
+
+    正则集中放配置，代码里不硬编码任何触发词 —— 改这里不需要动代码。
+    """
+    path = Path(config_dir) / "creampie_patterns.json"
+    if not path.exists():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    out: list[re.Pattern[str]] = []
+    for item in data.get("patterns", []):
+        try:
+            out.append(re.compile(item))
+        except re.error:
+            continue
+    return out
+
+
+def detect_creampie(text: str, rules: Rules) -> bool:
+    """玩家输入里是否命中内射 / 射进去 / 中出 类触发词。"""
+    if not text:
+        return False
+    for pat in rules.creampie_patterns:
+        if pat.search(text):
+            return True
+    return False
 
 
 # --------------------------------------------------------------------------

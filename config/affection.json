@@ -60,15 +60,24 @@
   },
 
   "forced_pain": {
-    "_comment": "低好感强制痛苦性行为。好感低于 threshold 时被强制触发；结算时大幅扣减好感并进入冻结，冻结期间猫娘无法反抗，只能表现出害怕/沉默/闪躲。",
+    "_comment": "低好感强制痛苦性行为。好感低于 threshold 时被强制触发；结算时大幅扣减好感并进入冻结，冻结期间猫娘无法反抗。等级递进见 prompts/persona.md：L1 哀求 → L2 放弃思考 → L3 哭泣痛苦回应 → L4 身体失控放荡呻吟 → L5 绝望呆滞/本能反应。",
     "threshold": 30,
     "affection_penalty": -25,
     "freeze_turns": 12,
-    "allowed_expressions": ["害怕", "沉默", "闪躲"],
-    "expression_weights": {
-      "害怕": 0.4,
-      "沉默": 0.35,
-      "闪躲": 0.25
+    "trigger_families": ["betrayal", "violation"],
+    "trigger_threshold": -8,
+    "level_escalate_turns": 3,
+    "max_level": 5,
+    "creampie_penalty": -10,
+    "creampie_freeze_turns": 12,
+    "recover_streak_needed": 5,
+    "allowed_expressions": ["害怕", "闪躲", "沉默"],
+    "expression_by_level": {
+      "L1": "害怕",
+      "L2": "害怕",
+      "L3": "闪躲",
+      "L4": "闪躲",
+      "L5": "沉默"
     },
     "resistance_blocked": true,
     "forced_input_still_advances": true

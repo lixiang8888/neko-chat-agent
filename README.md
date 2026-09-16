@@ -6,7 +6,7 @@
 prompts/  人格、评分 rubric、记忆策略、危机处置（提示词层）
 config/   数值配置、行为词表、LLM 参数（改这里不用动代码）
 src/      传输层、状态机、评分引擎、记忆层、存档（程序层）
-tests/    332 项离线测试（不需要 API Key，也不需要装 requests）
+tests/    407 项离线测试（不需要 API Key，也不需要装 requests）
 ```
 
 `src/` 各模块职责（对应源文件）：
@@ -17,7 +17,7 @@ tests/    332 项离线测试（不需要 API Key，也不需要装 requests）
 | `src/engine.py` | 状态演化主循环、`TurnReport`、care 窗口、一次性动作 |
 | `src/scoring.py` | 三路径判分 + 十条护栏 + 自评方向校验 |
 | `src/state.py` | `affection`（慢变量）/ `mood`（快变量）、档位、抵触、原子落盘 |
-| `src/context.py` | 危机/越狱检测、`<<好感度:N>>` 解析、系统提示词装配 |
+| `src/context.py` | 危机/越狱检测、`<<好感度:N>>` 解析、系统提示词装配、`{body_reaction}` 身体反应注入 |
 | `src/memory.py` | 四级压缩、剧情档案、漂移检测、风格锚点注入 |
 | `src/backends.py` | `Backend` Protocol（`speak` / `speak_stream` / `judge` / `summarize`）+ 离线 `StubBackend` |
 | `src/deepseek.py` | 传输层：SSE 解码、重试、思考分流、代理覆盖 |
@@ -73,7 +73,7 @@ python3 main.py --online --temperature 1.5
 python3 tests/run_all.py
 ```
 
-**332 项，10 个套件，全部离线。** 不需要 API Key，不需要装 `requests`，
+**407 项，11 个套件，全部离线。** 不需要 API Key，不需要装 `requests`，
 不联网 —— 数值逻辑必须能在没有模型的情况下完整验证。
 
 ---
@@ -224,6 +224,41 @@ LLM 看不到「好感 78.4」。它只看到「她现在允许你碰尾巴，�
 - **不当剧情素材** —— 危机消息照常存进 history（她确实会记得），
   但**不进压缩摘要**，不会被总结成一段可以继续引用的「剧情」。
 
+### 8.4 身体反应设定：主观反对与生理失控并存
+
+`prompts/persona.md` 里有一条硬设定：**猫娘是一种比较容易在性行为中感到快感的类人生物**。
+这条设定要求同时满足三层约束，缺一不可：
+
+1. **主观意识保持正确** —— 她的想法、判断、好恶始终是她自己的。反对不因身体有反应而改变。
+   明确禁止「她其实也想要」「嘴上说不要身体却很诚实」这类把身体反应等同于内心同意的写法。
+2. **减少主动互动** —— 台词少、动作被动，不主动挑逗、不迎合、不索求。
+3. **身体快感不受主观意志控制** —— 即使主观反对，身体仍会不受控地产生快感反应，
+   **必须有失控描写**（呼吸变乱、尾巴绷紧、手指抓紧、漏出的气音等）。
+
+边界是 **「失控 ≠ 同意」**：身体失控服务于「她控制不了自己的身体」这一张力，
+而不是服务于「她其实很享受」。主观上的反对与身体上的失控**同时存在**，才是正确写法。
+
+这条设定在 persona 正文里**无条件注入**每次生成流程（非占位符区域）。
+此外 `src/context.py` 在 `tone["label"] == "警惕"` 时，会把 `{body_reaction}` 槽位
+替换成一段强化提示：**主观意识描写优先** + **互动量最小化** + 失控生理信号示例。
+非警惕状态注入空串，不干扰正常演出。
+
+与 `forced_pain` 状态协调：当 `forced_pain` 标记同时存在时，以「强制痛苦行为」段的
+硬约束为准。该状态在 persona 与状态层里现在是 **L1–L5 递进等级制**
+（见下文 §8.6），失控描写要**更克制、更破碎**，用极短的生理反应代替成段的
+快感描写，不要写成享受。
+
+评分侧**无需调整**：`src/scoring.py` 只对玩家输入（`Proposal`）打分，猫娘输出侧的
+失控描写不进入判分路径；`prompts/scoring.md` 的 rubric 也不对句尾喵率设阈值，
+故不存在与失控描写要求相抵触的规则。`pain_veto` 门控与 persona 第 5 条同向，
+均压制越档输出。
+
+这套约束由 `tests/test_persona_forced.py` 锁死（75 项断言），覆盖静态条款存在性、
+主观优先顺序、失控生理信号、警惕态 `{body_reaction}` 注入、非警惕态不注入、
+`forced_pain` 协调、`forced_pain` 槽位在 L1–L5 各档的注入、按回合推进与封顶、
+内射加深一档与计数/扣分/冻结取长、连续正向回合退出并归零、两个开关字段，
+以及主观反对与身体失控并存、减少主动互动（台词少 / 动作被动 / 不主动配合）等维度。
+
 ### 8.5 危机分支与露骨档位门
 
 **危机分支**（`src/context.py` 的 `detect_crisis` + `prompts/crisis.md`）：
@@ -238,6 +273,116 @@ LLM 看不到「好感 78.4」。它只看到「她现在允许你碰尾巴，�
 `tier_floor` 只升不降、不可撤销，天然是「解锁」语义；而 `affection` 会因闲置回落波动。
 用 affection 判定会出现「解锁了又锁回去」，正是 `engine._tick_idle()` 里专门修掉的那类 bug。
 门槛**不能以数字形式进提示词**：程序算成布尔结论再注入，才是强制里程碑。
+
+### 8.6 强制痛苦性行为递进等级（`forced_pain`）
+
+低好感下的强制痛苦行为**不是一成不变的静止状态**，而是一条逐级转深的曲线。
+这条设定分布在三个层次，各自负责不同的东西：
+
+- **人格层（`prompts/persona.md`）** —— 「关于『强制痛苦行为』状态」段给出
+  **L1–L5 等级表**，逐级规定语言 / 声音 / 身体反应三类特征：
+
+  | 等级 | 名称 | 语言 | 声音 | 身体 |
+  |---|---|---|---|---|
+  | **L1** | 哀求 | 还在试图交流，带哭腔说「求你了喵」「不要了喵」 | 哭腔明显，句子被抽噎切断 | 拽衣角、耳朵前后摆动、缩向主人又缩回 |
+  | **L2** | 放弃思考 | 回应变短、变钝，像没听懂问题 | 气声多于实音，只剩吸鼻子声 | 眼神失焦、不再看主人、手指松开 |
+  | **L3** | 哭泣痛苦回应 / 自言自语 | 一点点回应 + 低声自言自语，「为什么喵」「……」碎句 | 断续呜咽、压不住的鼻音 | 肩膀一抽一抽、尾巴垂下不再动、膝盖发软 |
+  | **L4** | 身体失控 / 放荡呻吟 | 台词几乎不成句，拖着尾音的「啊……喵……」 | 呻吟一声比一声高又突然憋回，混哭音 | 腰不受控弓起、腿根发抖、尾巴绷紧缠上、指尖发白 |
+  | **L5** | 绝望呆滞 / 本能反应 | 几乎不说话，只有最本能的回应 | 干、轻、破碎，像已经用完了 | 眼睛是空的、表情不变、只有反射性一缩 |
+
+- **参数层（`config/affection.json` 的 `forced_pain` 块）** —— 保存硬参数：
+  触发阈值 `threshold`、扣分 `affection_penalty`、冻结 `freeze_turns`、
+  逐级推进回合 `level_escalate_turns=3`、最高级 `max_level=5`、
+  内射惩罚 `creampie_penalty=-10` 与 `creampie_freeze_turns`、
+  退出所需连续正向回合 `recover_streak_needed`、
+  以及按等级注入的默认表情 `expression_by_level`。
+
+- **状态层（`src/state.py`）** —— `GameState` 新增六个字段做持久化：
+  `forced_pain_active` / `forced_pain_level`（0 未触发，1–5 对应 L1–L5）/
+  `forced_pain_expression`（害怕 / 闪躲 / 沉默）/
+  `forced_pain_turns`（已持续回合数）/
+  `forced_pain_creampie_count`（内射类触发累计）/
+  `forced_pain_recovery_streak`（连续正向回合数）。
+  它们走 `dataclass` 的 `asdict` 路径自动落盘，旧存档缺失时按默认值补全，
+  不需要额外的迁移代码。
+
+#### 「完全沉默」不是合规写法
+
+旧写法把猫娘在强制场景下「一言不发」当成合格表现，这是错的。等级表明确规定：
+
+- **L1–L3 禁止写「完全沉默」。** 这个区间她**必须有回应** —— 哭腔、气音、自言自语
+  都算；一言不发是错的表现方式。
+- **L4 开始**可以有大量生理声音和几乎没有内容的台词，但**仍然不是无声**。
+- **只有 L5** 才接近真正的沉默 —— 但即便如此，也会有**接近本能的**极短回应
+  （气音 / 抽气 / 破碎的一声「喵」），不是完全的空白。
+
+#### 三种表情基调（`forced_pain_expression`）
+
+`害怕` / `闪躲` / `沉默` 被重新定位为**叠加在等级之上的质感**，不再独立表达状态，
+也不改变等级本身：
+
+| 基调 | 描写要点 | 适用等级 |
+|---|---|---|
+| 害怕 | 身体僵住、耳朵贴平、尾巴夹紧、呼吸变浅 | L1–L2 |
+| 闪躲 | 视线避开、身体缩起、不敢直视主人 | L1–L3 |
+| 沉默 | **只是表象**，用停顿和留白包住哭腔与气音，不是真空 | L3–L5 |
+
+#### 内射 / 射进去 / 中出：强制加深一档
+
+只要输入出现「**内射**」「**射进去**」「**中出**」或等价近义说法，
+视为发生对猫娘伤害极大的事件，程序会把 `forced_pain_level` **直接加深一档**
+（L1 → L2 → … → L5，L5 封顶）。对应 `config/affection.json` 的 `creampie_penalty`
+与 `creampie_freeze_turns`，`forced_pain_creampie_count` 累计触发次数。
+加深后**第一句反应要明显比上一条重**：更短的台词、更散的声音、更塌下去的身体。
+
+#### 通用硬约束（所有等级）
+
+1. **不反抗** —— 不写拒绝、不写挣脱。L1 可以说「不要」，那是求情不是反抗。
+2. **不撒娇** —— 平时的调皮、傲娇、讨摸全部收起来。这不是亲密，是伤害。
+3. **不主动** —— 不发起话题、不提问、不调情。
+4. **句尾「喵」可以保留，但会变得很轻、很碎** —— 不是崩坏线的机械重复。
+5. **动作要实、要少。** 「耳朵塌下去，没有动」比十个尾巴描写更重。
+6. **长度更短** —— L1 ≤ 60 字，L3 以后 ≤ 40 字，L5 ≤ 20 字。
+7. **不要写「她其实很享受」。** 快感失控（L4）是身体的事，不是她的事 ——
+   主观上的反对与身体上的失控要同时存在。
+
+这套等级约束由 `tests/test_persona_forced.py` 的「与 forced_pain 状态协调」一节锁住
+（断言 persona 文本里 `forced_pain` 与「更克制」同时出现）。
+
+#### 接线状态
+
+**全链路已接入** —— 从 persona 占位符到数值状态机，四层（提示词注入 / 触发推进 /
+内射结算 / 退出恢复）全部由程序驱动：
+
+- **提示词注入**：`src/context.py` 的 `slots` 新增 `forced_pain` 键，`state.forced_pain_active`
+  为真时注入当前 `forced_pain_level`、当前 `forced_pain_expression`，以及「内射类事件会把
+  等级再加深一档」的提醒；为假时注入空串。`prompts/persona.md` 里有 `{forced_pain}`
+  占位符与之对接。**只注入等级与表情结论，不注入任何好感数字。**
+- **触发与推进**：`src/engine.py` 的 `Engine._advance_forced_pain(result, events)` 在
+  `_evaluate_branches` 之后调用。触发条件 = `affection < threshold(30)` 且本回合命中
+  `trigger_families`（betrayal / violation）且分值 ≤ `trigger_threshold(-8)`。
+  进入后每回合 `forced_pain_turns += 1`，每满 `level_escalate_turns(3)` 回合
+  `forced_pain_level` 加深一档并封顶 `max_level(5)`。表情按 `expression_by_level` 填默认值；
+  玩家输入显式给出 `allowed_expressions` 内表情时优先。
+- **退出**：连续 `recover_streak_needed(5)` 个正向回合 → `forced_pain_active = False`，
+  并把 `level` / `turns` / `streak` 归零。
+- **内射结算**：`src/scoring.py` 的 `Rules.creampie_patterns` 从 `config/creampie_patterns.json`
+  载入正则表（不硬编码在代码中），`detect_creampie()` 在判分前检测玩家输入。
+  命中时 `src/engine.py` 的 `Engine._handle_creampie()` 会把 `forced_pain_level`
+  加深一档（封顶 L5）、`forced_pain_creampie_count += 1`、按 `creampie_penalty(-10)`
+  扣好感、按 `creampie_freeze_turns(12)` 进入冻结；该冻结与既有 `trust_freeze`
+  **取两者中更长的那个**（`max`），不会覆盖更长的既有冻结。
+- **配置读取状态**：`config/affection.json` 的 `forced_pain` 块**已被 `src/engine.py` 完整读取**，
+  不再是死配置。
+- **两个开关均已落地**：
+  - `resistance_blocked` —— `True` 时反抗 / 求饶类动作（`respect_boundary` / `reliability` 族）
+    不计入恢复连击（不接受反抗类动作）。
+  - `forced_input_still_advances` —— `False` 时中性 / 被动回合不推进 `forced_pain_turns`；
+    `True` 时（默认）被动输入也照样推进等级。
+
+对应的测试在 `tests/test_persona_forced.py`：L1–L5 各档槽位注入、按回合推进与封顶、
+表情优先级、内射四项效果（加深 / 计数 / 扣分 / 冻结取长）、5 个正向回合退出并归零、
+两个开关字段 —— 共 75 项断言。
 
 ### 9. 传输层
 
@@ -271,10 +416,11 @@ LLM 看不到「好感 78.4」。它只看到「她现在允许你碰尾巴，�
 | 露骨档位门 | `tests/test_intimacy.py` | 按档位判定、不可撤销性、注入的是结论不是数字 | 32 |
 | 危机分支 | `tests/test_crisis.py` | 零副作用逐字段比对、违禁词扫描、不进摘要 | 37 |
 | 密钥防线 | `tests/test_secrets.py` | 全工程明文扫描、`.gitignore` 覆盖检查 | 14 |
+| 人格设定·强制场景 | `tests/test_persona_forced.py` | 易感快感设定条款存在性、主观优先顺序、失控生理信号、警惕状态 `{body_reaction}` 注入、`forced_pain` 协调与 L1–L5 槽位注入、按回合推进与封顶、内射加深—计数—扣分—冻结取长、连续正向回合退出、`resistance_blocked`/`forced_input_still_advances` 开关、主观反对与身体失控并存、减少主动互动 | 75 |
 | 回归防线 | `tests/test_regressions.py` | 负分落地、被动损耗仍受保护、她的名字、代写边界 | 32 |
 
-合计 **332 项，10 个套件**。`tests/run_all.py` 是统一入口，跑完打印
-`套件：N/10 通过`，任一失败返回非零退出码。
+合计 **407 项，11 个套件**。`tests/run_all.py` 是统一入口，跑完打印
+`套件：N/11 通过`，任一失败返回非零退出码。
 
 ---
 
@@ -312,7 +458,7 @@ LLM 看不到「好感 78.4」。它只看到「她现在允许你碰尾巴，�
 | 好感曲线、档位、冷却、门槛、崩坏阈值、抵触、care 窗口、愿望、心情 | `config/affection.json` |
 | 行为词表、分值、行为族、语义锚点、三轴公式、护栏开关 | `config/actions.json` |
 | 模型、端点、代理、超时、重试、采样参数（演出高温 / 判分低温分包） | `config/llm.json` |
-| 人格、评分 rubric、记忆策略、危机处置、恢复 | `prompts/*.md` |
+| 人格、评分 rubric、记忆策略、危机处置、恢复、身体反应设定 | `prompts/*.md` |
 
 改完直接跑 `python3 tests/run_all.py` 验证平衡性没崩。
 三个配置文件都是 JSON，改它们不需要动任何代码。
